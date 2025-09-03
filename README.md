@@ -27,7 +27,7 @@ Out of the box, the community image works - but real-world use quickly runs into
 - **Bluetooth tether setup** → repetitive, error-prone edits.
 
 ### Just use `pwnagotchi --wizard`, they said…
-Sure, but the wizard is fully interactive, needs hand-holding, can't be scripted, and nukes your config every time you re-run it. It overwrites config.toml, ignores conf.d/*, and restarts the service mid-edit. There's zero input validation, even bugs like missing parentheses (`.lower` without `()`) sneak through. Fine for one-time setup on your desk - not for headless use, automation, or mass deployment.
+Sure, but the [wizard](https://github.com/jayofelony/pwnagotchi/blob/noai/pwnagotchi/cli.py) is fully interactive, needs hand-holding, can't be scripted, and nukes your config every time you re-run it. It overwrites config.toml, ignores conf.d/*, and restarts the service mid-edit. There's zero input validation, even bugs like missing parentheses (`.lower` without `()`) sneak through. Fine for one-time setup on your desk - not for headless use, automation, or mass deployment.
 
 This repo collects postinstall hardening scripts to automate those fixes.
 They are idempotent (safe to run multiple times) and talk back with little gotchi chatter so you see what happened.
