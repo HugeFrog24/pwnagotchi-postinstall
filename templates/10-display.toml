@@ -1,0 +1,5 @@
+# Gotchi-approved display settings (template)
+ui.display.enabled = true
+ui.display.type = "waveshare_4"  # Common types: waveshare_4, waveshare_2, inky, etc. - see a list of supported displays here: https://pwnagotchi.ai/configuration/#select-your-display
+ui.display.rotation = 180        # 0, 90, 180, 270
+ui.invert = true                 # true for day mode, false for dark mode

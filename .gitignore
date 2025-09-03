@@ -1,0 +1,2 @@
+# Personal override templates (may contain sensitive info)
+*.override.toml

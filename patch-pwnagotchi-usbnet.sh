@@ -1,12 +1,50 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage:
-#   ./patch-pwnagotchi-usbnet.sh /path/to/bootfs [mode] [pi_ip] [host_ip] [netmask] [hostname]
-# Examples:
-#   ./patch-pwnagotchi-usbnet.sh /run/media/$USER/bootfs static 10.0.0.2 10.0.0.1 255.255.255.0 pwnagotchi
-#   ./patch-pwnagotchi-usbnet.sh /run/media/$USER/bootfs dhcp "" "" "" pwnagotchi
+# Load shared environment detection
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib/environment-detection.sh"
 
+# 🛡️ Self-protection: don't run on the gotchi itself!
+FORCE_MODE=false
+if [[ "${1:-}" == "--force" ]]; then
+  FORCE_MODE=true
+  shift
+fi
+
+ensure_not_on_pwnagotchi "$0" "$FORCE_MODE"
+
+# Handle -h / --help
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  cat <<EOF
+Usage:
+  $0 [--force] /path/to/bootfs [mode] [pi_ip] [host_ip] [netmask] [hostname]
+
+Examples:
+  $0 /run/media/\$USER/bootfs static 10.0.0.2 10.0.0.1 255.255.255.0 pwnagotchi
+  $0 /run/media/\$USER/bootfs dhcp "" "" "" pwnagotchi
+
+Arguments:
+  --force           Skip environment detection (dangerous!)
+  /path/to/bootfs   Path to the mounted FAT32 boot partition (after flashing image)
+  mode              "static" or "dhcp" (default: static)
+  pi_ip             Static IP of the Pi (default: 10.0.0.2)
+  host_ip           IP of the host (default: 10.0.0.1)
+  netmask           Netmask (default: 255.255.255.0)
+  hostname          Hostname to embed in boot args (default: pwnagotchi)
+
+What it does:
+  ✓ Adds dwc2 + g_ether to modules-load
+  ✓ Adds IP config to cmdline.txt
+  ✓ Ensures dtoverlay=dwc2 in config.txt
+  ✓ Enables SSH by creating /boot/ssh
+
+💡 Run this script *before* first boot.
+EOF
+  exit 0
+fi
+
+# Defaults
 BOOT="${1:-}"
 MODE="${2:-static}"           # static | dhcp
 PI_IP="${3:-10.0.0.2}"
@@ -73,7 +111,7 @@ fi
 # 5) Enable SSH
 : > "$SSH_FLAG"
 
-echo "Patched:"
-echo " - $(basename "$CMD") (modules-load + ${MODE^^} ip)"
-echo " - $(basename "$CFG") (dtoverlay=dwc2 ensured)"
-echo " - created $(basename "$SSH_FLAG") to enable SSH"
+echo -e "\e[32mPatched:\e[0m"
+echo -e "\e[32m - $(basename "$CMD") (modules-load + ${MODE^^} ip)\e[0m"
+echo -e "\e[32m - $(basename "$CFG") (dtoverlay=dwc2 ensured)\e[0m"
+echo -e "\e[32m - created $(basename "$SSH_FLAG") to enable SSH\e[0m"

@@ -1,0 +1,5 @@
+main.plugins.bt-tether.enabled = true
+main.plugins.bt-tether.phone-name = "" # Your phone's name
+main.plugins.bt-tether.phone = ""      # android or ios
+main.plugins.bt-tether.mac = ""        # your phone's MAC address
+main.plugins.bt-tether.ip = ""         # 192.168.44.2-254 for android, 172.20.10.2-254 for ios

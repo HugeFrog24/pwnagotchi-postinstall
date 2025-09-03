@@ -1,16 +1,48 @@
 #!/usr/bin/env bash
-# freeze-strict.sh — Pwnagotchi "firmware mode" hard-freeze
-# - Holds every currently installed package (so apt upgrade does nothing)
-# - Leaves ONLY your allowlist (below) unheld so you can install/upgrade them
-# - Makes apt a bit quieter (no recommends)
-# - Prints an idempotent MOTD banner with clear instructions
-# - Safe to re-run: idempotent holds + banner replace
+# postinstall-pwnagotchi-freeze.sh — Pwnagotchi "firmware mode" hard-freeze
 
 set -euo pipefail
+
+# --- help check FIRST (before root check) ---
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  cat <<EOF
+Usage:
+  sudo ./$(basename "$0") [--force]
+
+What it does:
+  - Holds every currently installed package (so apt upgrade does nothing)
+  - Leaves ONLY your allowlist unheld so you can install/upgrade them
+  - Makes apt a bit quieter (no recommends)
+  - Prints an idempotent MOTD banner with clear instructions
+
+Environment:
+  - Automatically detects Pwnagotchi devices (Raspberry Pi + pwnagotchi indicators)
+  - Use --force to bypass detection and run on any system
+
+Example:
+  sudo ./$(basename "$0")
+EOF
+  exit 0
+fi
+
+# NOW check for root privileges
 [[ $EUID -eq 0 ]] || { echo "Please run as root."; exit 1; }
 
+# Load shared environment detection
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib/environment-detection.sh"
+
+# 🛡️ Environment detection: ensure we're on a Pwnagotchi device
+FORCE_MODE=false
+if [[ "${1:-}" == "--force" ]]; then
+  FORCE_MODE=true
+  shift
+fi
+
+ensure_on_pwnagotchi "$0" "$FORCE_MODE"
+
 # --- Allowlist: tools you want to be able to install/upgrade normally ---
-ALLOW_PKGS=(tmux htop fastfetch ncdu rclone)
+ALLOW_PKGS=(tmux htop ncdu rclone)
 
 echo "[*] Building package inventory …"
 # 1) All installed packages
@@ -62,16 +94,14 @@ fi
 # Append fresh banner once
 cat >> "$MOTD_FILE" <<'MOTD'
 #=== PWNAGOTCHI_FIRMWARE_BANNER BEGIN ===
-############################################################
 #  PWNAGOTCHI FIRMWARE MODE (STRICT HOLD)
 #  - All currently installed packages are on HOLD
-#  - Allowed tools (not held): tmux htop fastfetch ncdu rclone
+#  - Allowed tools (not held): tmux htop ncdu rclone
 #  - `apt upgrade` should show 0 upgrades
 #  - Allow a package:   sudo apt-mark unhold <pkg>
 #  - Re-freeze it:      sudo apt-mark hold <pkg>
-############################################################
 #=== PWNAGOTCHI_FIRMWARE_BANNER END ===
 MOTD
 
-echo "[+] Strict freeze complete."
-echo "    Tip: to add another tool later, run:  sudo apt-mark unhold <pkg> && sudo apt install <pkg> && sudo apt-mark hold <pkg>"
+echo -e "\e[32m[+] Strict freeze complete.\e[0m"
+echo -e "\e[32m    Tip: to add another tool later, run:  sudo apt-mark unhold <pkg> && sudo apt install <pkg> && sudo apt-mark hold <pkg>\e[0m"
